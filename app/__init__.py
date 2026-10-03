@@ -30,10 +30,12 @@ def create_app() -> Flask:
     from app.blueprints.auth import bp as auth_bp
     from app.blueprints.board import bp as board_bp
     from app.blueprints.batches import bp as batches_bp
+    from app.blueprints.history import bp as history_bp
     from app.blueprints.ponds import bp as ponds_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(board_bp)
+    app.register_blueprint(history_bp)
     app.register_blueprint(ponds_bp)
     app.register_blueprint(batches_bp)
 
@@ -47,6 +49,33 @@ def create_app() -> Flask:
         return redirect(url_for("auth.login"))
 
     return app
+
+
+def ensure_schema() -> None:
+    """幂等补列：老数据库卷没有本次新增的乐观锁/留痕列时自动 ALTER。
+
+    db.create_all() 只建新表、不改既有表，所以这里按检查结果补列，
+    保证旧卷重启后也能工作；全新库则由 create_all 直接建出。
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    if "slake_batches" not in inspector.get_table_names():
+        return
+
+    existing = {col["name"] for col in inspector.get_columns("slake_batches")}
+    add_columns = {
+        "lock_version": "ALTER TABLE slake_batches ADD COLUMN lock_version "
+        "INTEGER NOT NULL DEFAULT 1",
+        "peak_recorded_by": "ALTER TABLE slake_batches ADD COLUMN "
+        "peak_recorded_by VARCHAR(64)",
+        "peak_recorded_at": "ALTER TABLE slake_batches ADD COLUMN "
+        "peak_recorded_at TIMESTAMP WITH TIME ZONE",
+    }
+    with db.engine.begin() as conn:
+        for name, ddl in add_columns.items():
+            if name not in existing:
+                conn.execute(text(ddl))
 
 
 def seed_demo_data() -> None:

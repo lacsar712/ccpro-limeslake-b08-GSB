@@ -15,19 +15,32 @@ class FlashController extends Controller {
 }
 
 class FormHintController extends Controller {
-  static targets = ["status", "hint"]
+  static targets = ["status", "hint", "clearPeak", "peak"]
   connect() {
     this.update()
     this.statusTarget?.addEventListener("change", () => this.update())
+    this.clearPeakTarget?.addEventListener("change", () => this.onToggleClear())
+  }
+  onToggleClear() {
+    // 勾选「未测」后峰值输入作废：清空数值并禁用，避免 0 之类的数字混入库值。
+    if (this.hasPeakTarget) {
+      this.peakTarget.disabled = this.clearPeakTarget.checked
+      if (this.clearPeakTarget.checked) this.peakTarget.value = ""
+    }
+    this.update()
   }
   update() {
     if (!this.hasHintTarget || !this.hasStatusTarget) return
-    if (this.statusTarget.value === "drawn") {
+    const cleared = this.hasClearPeakTarget && this.clearPeakTarget.checked
+    if (cleared) {
       this.hintTarget.textContent =
-        "当前选择「已出灰」：须存在最近批次，且峰值温度已记录并 ≥ 60℃。"
+        "已标记本班「未测」：库值为空，履历与瓦片都显示未测，不能出灰。"
+    } else if (this.statusTarget.value === "drawn") {
+      this.hintTarget.textContent =
+        "当前选择「已出灰」：须存在最近班次，且峰值温度已测量并 ≥ 60℃。"
     } else {
       this.hintTarget.textContent =
-        "出灰前请确认最近熟化批次已记录峰值温度且不低于 60℃。"
+        "出灰前请确认最近熟化班次已测量峰值温度且不低于 60℃。"
     }
   }
 }

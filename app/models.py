@@ -74,4 +74,13 @@ class SlakeBatch(db.Model):
     peak_temp_c = db.Column(db.Float, nullable=True)
     notes = db.Column(db.Text, nullable=False, default="")
 
+    # 乐观锁版本号：每次更新自增；两人几乎同时改同一班峰值时，
+    # 持旧版本号提交的一方会被拒（409），只许一版生效。
+    lock_version = db.Column(db.Integer, nullable=False, default=1, server_default="1")
+    # 峰值登记 / 最近一次修正的留痕，供履历条展示，绝不写死数字。
+    peak_recorded_by = db.Column(db.String(64), nullable=True)
+    peak_recorded_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
     pond = db.relationship("Pond", back_populates="batches")
+
+    __mapper_args__ = {"version_id_col": lock_version}

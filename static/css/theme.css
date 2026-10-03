@@ -409,6 +409,119 @@ button:hover, .btn:hover { background: #1e293b; }
 .badge-filling { background: var(--fill-bg); color: var(--fill-ink); }
 .badge-slaking { background: var(--slake-bg); color: var(--slake-ink); }
 .badge-drawn { background: var(--drawn-bg); color: var(--drawn-ink); }
+
+/* 空峰值统一徽标：未测，不用 0 或占位数字 */
+.badge-unmeasured {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px dashed #d97706;
+}
+
+.tile-meta .badge-unmeasured { font-size: 0.78rem; }
+
+/* 峰值履历条 */
+.history-page { max-width: 980px; }
+
+.history-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 4px 0 18px;
+}
+
+.history-filters .pond-select { min-width: 220px; }
+
+.peak-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.peak-row {
+  display: grid;
+  grid-template-columns: 190px 130px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--lime-mid);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.peak-row.is-unmeasured { border-left-color: #d97706; background: #fffdf7; }
+
+.peak-time { display: grid; gap: 3px; }
+.peak-when { font-weight: 700; color: var(--slate); font-size: 0.95rem; }
+.peak-pond { color: var(--muted); font-size: 0.85rem; }
+
+.peak-value { display: flex; align-items: baseline; gap: 3px; }
+.peak-value strong { font-size: 1.5rem; color: var(--lime-ink); }
+.peak-unit { color: var(--muted); font-weight: 700; }
+.is-unmeasured .peak-value { align-items: center; }
+
+.peak-meta {
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.peak-notes { color: var(--slate); }
+
+.peak-goto {
+  color: var(--lime-mid);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.peak-goto:hover { text-decoration: underline; }
+
+.batch-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.batch-card-head h3 { margin: 0; font-size: 0.95rem; color: var(--slate); }
+
+.batch-history-link {
+  font-size: 0.82rem;
+  color: var(--lime-mid);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.batch-history-link:hover { text-decoration: underline; }
+
+.inline-check {
+  grid-template-columns: auto 1fr;
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.inline-check input[type="checkbox"] { width: 16px; height: 16px; }
+.inline-check input[type="checkbox"]:disabled + span,
+.inline-check input[type="number"]:disabled { opacity: 0.55; }
+
+@media (max-width: 820px) {
+  .peak-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .peak-goto { white-space: normal; }
+}
 .panel {
   max-width: 560px;
   background: var(--panel);

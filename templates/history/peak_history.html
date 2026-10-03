@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}峰值履历{% endblock %}
+{% block content %}
+<section class="history-page">
+  <header class="floor-head">
+    <div>
+      <h1>峰值履历条</h1>
+      <p>按时间列出每口池各班峰值；最新一行即平面图瓦片上的最近一班峰值，与库值一致。空峰值为「未测」。</p>
+    </div>
+  </header>
+
+  {% if plants %}
+  <div class="plant-chips" role="tablist" aria-label="厂区切换">
+    {% for plant in plants %}
+    <a
+      class="chip {% if active_plant and plant.id == active_plant.id %}active{% endif %}"
+      href="{{ url_for('history.peak_history', plant_id=plant.id) }}"
+    >{{ plant.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form class="history-filters" method="get" aria-label="筛选">
+    {% if active_plant %}<input type="hidden" name="plant_id" value="{{ active_plant.id }}" />{% endif %}
+    <label class="pond-select">熟化池
+      <select name="pond_id" onchange="this.form.submit()">
+        <option value="">全部池（{{ ponds|length }}）</option>
+        {% for pond in ponds %}
+        <option value="{{ pond.id }}" {% if selected_pond and selected_pond.id == pond.id %}selected{% endif %}>
+          {{ pond.code }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit">筛选</button></noscript>
+    {% if selected_pond %}
+    <a class="btn ghost" href="{{ url_for('history.peak_history', plant_id=active_plant.id if active_plant else None) }}">清除池筛选</a>
+    {% endif %}
+  </form>
+
+  <ol class="peak-strip">
+    {% for row in rows %}
+    <li class="peak-row {% if row.peak_temp_c is none %}is-unmeasured{% endif %}">
+      <div class="peak-time">
+        <span class="peak-when">{{ row.started_at.strftime('%Y-%m-%d %H:%M') if row.started_at else '—' }}</span>
+        <span class="peak-pond">{{ row.pond.code }} · {{ row.pond.plant.name }}</span>
+      </div>
+      <div class="peak-value">
+        {% if row.peak_temp_c is not none %}
+          <strong>{{ '%.1f'|format(row.peak_temp_c) }}</strong><span class="peak-unit">℃</span>
+        {% else %}
+          <span class="badge badge-unmeasured">未测</span>
+        {% endif %}
+      </div>
+      <div class="peak-meta">
+        <span>目标 {{ '%.1f'|format(row.target_temp_c) }}℃</span>
+        {% if row.peak_temp_c is not none and row.peak_recorded_at %}
+          <span class="peak-audit">
+            {{ row.peak_recorded_by or '—' }} 登记于
+            {{ row.peak_recorded_at.strftime('%Y-%m-%d %H:%M') }}
+          </span>
+        {% elif row.peak_temp_c is not none %}
+          <span class="peak-audit">历史导入</span>
+        {% else %}
+          <span class="peak-audit">本班尚未测得峰值</span>
+        {% endif %}
+        {% if row.notes %}<span class="peak-notes">{{ row.notes }}</span>{% endif %}
+      </div>
+      <a
+        class="peak-goto"
+        href="{{ url_for('board.floor_plan', plant_id=row.pond.plant_id, pond=row.pond_id) }}"
+      >在平面图改这班</a>
+    </li>
+    {% else %}
+    <li class="empty-board">{% if active_plant %}该筛选条件下暂无批次记录{% else %}请先选择厂区{% endif %}</li>
+    {% endfor %}
+  </ol>
+</section>
+{% endblock %}
