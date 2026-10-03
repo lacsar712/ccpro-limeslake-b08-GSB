@@ -74,4 +74,8 @@ class SlakeBatch(db.Model):
     peak_temp_c = db.Column(db.Float, nullable=True)
     notes = db.Column(db.Text, nullable=False, default="")
 
+    # 乐观锁：两人几乎同时保存同一班峰值时，后提交者版本不匹配会被拒绝
+    version_id = db.Column(db.Integer, nullable=False, server_default="0")
+    __mapper_args__ = {"version_id_col": version_id}
+
     pond = db.relationship("Pond", back_populates="batches")

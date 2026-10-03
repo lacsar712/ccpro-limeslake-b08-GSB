@@ -348,6 +348,34 @@ button:hover, .btn:hover { background: #1e293b; }
 
 .hint { color: var(--muted); font-size: 0.88rem; margin: 0; }
 
+/* 峰值履历页 */
+.history-page { max-width: 1100px; }
+
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.filter-pond { min-width: 200px; }
+
+.history-table .peak-cell { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.peak-untested {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.drawer-more { margin: 10px 0 0; font-size: 0.9rem; }
+.drawer-more a { color: var(--lime-mid); font-weight: 600; text-decoration: none; }
+.drawer-more a:hover { text-decoration: underline; }
+
 .flash-stack { margin-bottom: 16px; display: grid; gap: 8px; }
 .flash { padding: 10px 12px; border-radius: 8px; }
 .flash-error { background: #fee2e2; color: var(--danger); }

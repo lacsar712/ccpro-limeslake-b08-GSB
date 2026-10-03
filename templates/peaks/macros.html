@@ -1,0 +1,5 @@
+{# 峰值温度统一渲染：有值显「72.0℃」，NULL 显「未测」。
+   瓦片 / 抽屉 / 峰值履历共用，保证三处展示同源同格式。 #}
+{% macro peak_text(value) -%}
+{%- if value is not none -%}{{ '%.1f'|format(value) }}℃{%- else -%}<span class="peak-untested">未测</span>{%- endif -%}
+{%- endmacro %}

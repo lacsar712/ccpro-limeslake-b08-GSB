@@ -2,6 +2,7 @@ from datetime import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy.orm.exc import StaleDataError
 
 from app.extensions import db
 from app.models import Pond, SlakeBatch
@@ -71,7 +72,12 @@ def edit_batch(batch_id: int):
         peak_raw = (request.form.get("peak_temp_c") or "").strip()
         batch.peak_temp_c = float(peak_raw) if peak_raw else None
         batch.notes = (request.form.get("notes") or "").strip()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except StaleDataError:
+            db.session.rollback()
+            flash("该班记录刚被他人更新，请刷新页面后再编辑", "error")
+            return render_template("batches/form.html", ponds=ponds, batch=batch)
         flash("熟化批次已更新", "ok")
         return redirect(
             url_for(

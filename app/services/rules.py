@@ -14,7 +14,8 @@ class RuleError(ValueError):
 def latest_batch_for_pond(pond: Pond) -> SlakeBatch | None:
     if not pond.batches:
         return None
-    return max(pond.batches, key=lambda b: b.started_at)
+    # 与峰值履历页排序一致：开始时间倒序、同时间以新建批次(id 大)为最新
+    return max(pond.batches, key=lambda b: (b.started_at, b.id))
 
 
 def can_mark_pond_drawn(pond: Pond) -> tuple[bool, str]:

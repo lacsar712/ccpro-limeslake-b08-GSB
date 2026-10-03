@@ -29,12 +29,22 @@ else:
 PY
 
 python << 'PY'
+from sqlalchemy import text
+
 from app import create_app, seed_demo_data
 from app.extensions import db
 
 app = create_app()
 with app.app_context():
     db.create_all()
+    # 既有库补峰值乐观锁版本列；新库 create_all 已建，IF NOT EXISTS 跳过
+    db.session.execute(
+        text(
+            "ALTER TABLE slake_batches "
+            "ADD COLUMN IF NOT EXISTS version_id INTEGER NOT NULL DEFAULT 0"
+        )
+    )
+    db.session.commit()
     seed_demo_data()
     print("migrate/seed done")
 PY

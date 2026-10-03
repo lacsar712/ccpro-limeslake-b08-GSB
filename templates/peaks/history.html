@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "peaks/macros.html" import peak_text %}
+{% block title %}峰值履历{% endblock %}
+{% block content %}
+<section class="history-page">
+  <header class="page-head">
+    <div>
+      <h1>峰值履历</h1>
+      <p>按时间列出各池各班峰值温度；空峰值表示该班尚未测量。</p>
+    </div>
+  </header>
+
+  {% if plants %}
+  <div class="plant-chips" role="tablist" aria-label="厂区筛选">
+    {% for plant in plants %}
+    <a
+      class="chip {% if active_plant and plant.id == active_plant.id %}active{% endif %}"
+      href="{{ url_for('history.peak_history', plant_id=plant.id) }}"
+    >{{ plant.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form class="filter-bar" method="get">
+    {% if active_plant %}
+    <input type="hidden" name="plant_id" value="{{ active_plant.id }}" />
+    {% endif %}
+    <label class="filter-pond">池号
+      <select name="pond_id" onchange="this.form.submit()">
+        <option value="">全部池</option>
+        {% for pond in ponds %}
+        <option value="{{ pond.id }}" {% if selected_pond and selected_pond.id == pond.id %}selected{% endif %}>
+          {{ pond.code }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <noscript><button type="submit">筛选</button></noscript>
+  </form>
+
+  <table class="data-table history-table">
+    <thead>
+      <tr>
+        <th>厂区</th>
+        <th>池号</th>
+        <th>班次（开始时间）</th>
+        <th>峰值温度</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for batch in rows %}
+      <tr>
+        <td>{{ batch.pond.plant.name }}</td>
+        <td>{{ batch.pond.code }}</td>
+        <td>{{ batch.started_at.strftime('%Y-%m-%d %H:%M') if batch.started_at else '—' }}</td>
+        <td class="peak-cell">{{ peak_text(batch.peak_temp_c) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">{% if active_plant %}该筛选条件下暂无班次记录{% else %}暂无班次记录{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

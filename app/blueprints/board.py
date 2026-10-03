@@ -1,5 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy.orm.exc import StaleDataError
 
 from app.extensions import db
 from app.models import Plant, Pond
@@ -12,6 +13,14 @@ STATUS_LABELS = {
     Pond.STATUS_SLAKING: "熟化中",
     Pond.STATUS_DRAWN: "已出灰",
 }
+
+STALE_MESSAGE = "该班记录刚被他人更新（峰值只保留一版），请刷新页面后重试，本次修改未保存。"
+
+
+def _back_to_drawer(pond: Pond):
+    return redirect(
+        url_for("board.floor_plan", plant_id=pond.plant_id, pond=pond.id)
+    )
 
 
 @bp.route("/")
@@ -65,6 +74,11 @@ def pond_ops(pond_id: int):
     peak_raw = (request.form.get("peak_temp_c") or "").strip()
     notes = (request.form.get("batch_notes") or "").strip()
 
+    try:
+        form_version = int((request.form.get("version_id") or "").strip())
+    except ValueError:
+        form_version = None
+
     batch = latest_batch_for_pond(pond)
     if batch is None:
         flash("该池尚无熟化批次，无法登记峰值或出灰", "error")
@@ -72,15 +86,23 @@ def pond_ops(pond_id: int):
             url_for("board.floor_plan", plant_id=pond.plant_id, pond=pond.id)
         )
 
+    # 乐观锁第一道：表单渲染后该班已被他人保存过，直接拒绝旧版本
+    if form_version is not None and batch.version_id != form_version:
+        db.session.rollback()
+        flash(STALE_MESSAGE, "error")
+        return _back_to_drawer(pond)
+
+    # 留空即「未测」（NULL），不写入任何默认数字
     if peak_raw:
         try:
-            batch.peak_temp_c = float(peak_raw)
+            peak_value = float(peak_raw)
         except ValueError:
             flash("峰值温度格式无效", "error")
-            return redirect(
-                url_for("board.floor_plan", plant_id=pond.plant_id, pond=pond.id)
-            )
+            return _back_to_drawer(pond)
+    else:
+        peak_value = None
 
+    batch.peak_temp_c = peak_value
     batch.notes = notes
 
     try:
@@ -91,5 +113,9 @@ def pond_ops(pond_id: int):
     except RuleError as exc:
         db.session.rollback()
         flash(str(exc), "error")
+    except StaleDataError:
+        # 乐观锁第二道：两人并发提交、读到同一版本，后到者在此失败
+        db.session.rollback()
+        flash(STALE_MESSAGE, "error")
 
-    return redirect(url_for("board.floor_plan", plant_id=pond.plant_id, pond=pond.id))
+    return _back_to_drawer(pond)
